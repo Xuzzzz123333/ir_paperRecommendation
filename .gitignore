@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+backend/app/storage/paper_cache.sqlite
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+backend/uvicorn_stdout.log
+backend/uvicorn_stderr.log
