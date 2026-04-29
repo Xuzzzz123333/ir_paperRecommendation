@@ -1,30 +1,86 @@
-# 面向科研主题的论文自动检索与结构化摘要系统
+# Paper Recommender Demo
 
-## 项目简介
+面向科研主题的论文自动检索与结构化摘要系统。
 
-这是一个面向信息检索课程 HW3 demo 的前后端分离项目。用户输入研究主题、关键词或自然语言问题后，系统会自动从开放学术数据源检索候选论文，随后使用 BM25 与 Sentence-Transformers 做混合排序，并基于论文摘要抽取结构化推荐信息。
+这是一个适合信息检索课程 HW3 展示的前后端分离 demo。用户输入研究主题、关键词或自然语言问题后，系统会自动从开放学术数据源检索候选论文，随后执行混合排序与结构化摘要分析，并在网页中展示推荐结果。
 
-主流程不依赖用户手动上传 PDF，更接近“自动论文推荐与学术检索”场景。
+## Project Highlights
 
-## 系统架构
+- Automatic academic paper retrieval from external sources instead of manual PDF upload
+- Hybrid ranking with BM25 and Sentence-Transformers dense similarity
+- Structured abstract analysis without calling large language models
+- FastAPI backend with Swagger docs and REST API
+- React + Vite + TypeScript frontend for demo-style presentation
+- SQLite-based local metadata cache, no heavy database dependency
+
+## Why This Is an IR System
+
+这个项目符合信息检索系统的典型流程：
+
+1. 用户输入查询主题
+2. 系统从学术数据源召回候选论文
+3. 对候选论文做文本处理与去重
+4. 使用 BM25 进行关键词相关性建模
+5. 使用 Sentence-Transformers 进行语义向量相似度建模
+6. 使用混合打分完成排序
+7. 输出结构化推荐理由与论文摘要分析
+
+混合排序核心公式：
+
+```text
+final_score = alpha * dense_score + (1 - alpha) * bm25_score
+```
+
+## System Architecture
 
 ```text
 paper-recommender-demo/
-├── backend/      FastAPI + academic API integration + hybrid ranking + SQLite cache
+├── backend/      FastAPI + source APIs + ranking + cache
 ├── frontend/     React + Vite + TypeScript demo UI
-└── docs/         System pipeline diagram
+└── docs/         Pipeline diagram and supporting docs
 ```
 
-更详细流程见 [docs/system_pipeline.md](docs/system_pipeline.md)。
+系统流程图见 [docs/system_pipeline.md](docs/system_pipeline.md)。
 
-## 为什么这是信息检索系统
+## Tech Stack
 
-- 它以用户查询为起点，对外部论文源执行候选召回。
-- 它对候选论文执行文本预处理、BM25 关键词匹配和向量语义匹配。
-- 它使用 `final_score = alpha * dense_score + (1 - alpha) * bm25_score` 进行混合排序。
-- 它输出结构化推荐理由，提升结果可解释性，适合作为课程中的“检索 + 排序 + 结果组织”系统 demo。
+### Backend
 
-## 后端启动方式
+- Python
+- FastAPI
+- httpx
+- sentence-transformers
+- rank-bm25
+- numpy
+- pandas
+- pydantic
+- uvicorn
+- SQLite
+
+### Frontend
+
+- React
+- Vite
+- TypeScript
+- CSS
+
+## Supported Features
+
+- Query-based academic paper retrieval
+- Source selection: `arxiv`, `openalex`, `semantic_scholar`
+- Optional filters: `max_results`, `alpha`, `year_from`, `year_to`, `sort_by`
+- Candidate paper ranking with dense + sparse hybrid scoring
+- Structured fields:
+  - research problem
+  - core method
+  - main contribution
+  - experimental evidence
+  - limitations
+  - recommendation reason
+
+## Quick Start
+
+### Backend
 
 ```bash
 cd backend
@@ -39,12 +95,12 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-Swagger 文档：
+Swagger:
 
 - `http://localhost:8000/docs`
 - `http://localhost:8000/redoc`
 
-## 前端启动方式
+### Frontend
 
 ```bash
 cd frontend
@@ -52,17 +108,34 @@ npm install
 npm run dev
 ```
 
-默认前端访问地址通常为 `http://localhost:5173`，默认后端地址为 `http://localhost:8000`。
+Frontend default URL:
 
-## API 调用示例
+- `http://localhost:5173`
 
-### 1. 健康检查
+Backend default URL:
+
+- `http://localhost:8000`
+
+## API Overview
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/health` | Health check |
+| `GET` | `/api/sources` | List supported sources |
+| `POST` | `/api/papers/search` | Retrieve candidate papers |
+| `POST` | `/api/papers/recommend` | Rank and recommend papers |
+| `POST` | `/api/papers/analyze` | Analyze one paper into structured fields |
+| `DELETE` | `/api/cache` | Clear local paper cache |
+
+## API Examples
+
+### Health Check
 
 ```bash
 curl http://localhost:8000/api/health
 ```
 
-### 2. 查询候选论文
+### Search Candidate Papers
 
 ```bash
 curl -X POST http://localhost:8000/api/papers/search \
@@ -75,7 +148,7 @@ curl -X POST http://localhost:8000/api/papers/search \
   }'
 ```
 
-### 3. 推荐排序论文
+### Recommend Papers
 
 ```bash
 curl -X POST http://localhost:8000/api/papers/recommend \
@@ -89,7 +162,7 @@ curl -X POST http://localhost:8000/api/papers/recommend \
   }'
 ```
 
-### 4. 分析单篇论文
+### Analyze One Paper
 
 ```bash
 curl -X POST http://localhost:8000/api/papers/analyze \
@@ -110,32 +183,45 @@ curl -X POST http://localhost:8000/api/papers/analyze \
   }'
 ```
 
-### 5. 清空缓存
+### Clear Cache
 
 ```bash
 curl -X DELETE http://localhost:8000/api/cache
 ```
 
-## Demo 演示步骤
+## Demo Flow
 
-1. 启动后端并访问 Swagger，确认 `/api/health` 正常。
-2. 启动前端页面，输入一个研究主题，例如 `DINOv2 for remote sensing change detection`。
-3. 选择数据源、`max_results`、`alpha`、年份区间和排序方式。
-4. 点击“搜索并推荐论文”，观察表格中的排名分数。
-5. 在下方结构化卡片里展示推荐理由、研究问题、方法、贡献、实验和局限性。
-6. 录屏时可以同时展示 Swagger 请求结果、前端页面和流程图。
+1. Start the backend and open Swagger.
+2. Start the frontend.
+3. Enter a topic such as `DINOv2 for remote sensing change detection`.
+4. Select a data source and ranking parameters.
+5. Click `搜索并推荐论文`.
+6. Review ranking scores in the table.
+7. Open the paper cards to inspect recommendation reasons and structured summaries.
 
-## 适合作业报告截图的位置
+## Recommended Screenshot Positions For HW3 Report
 
-- 首页标题区与参数区：展示系统功能入口。
-- 推荐结果表格：展示排序分数与检索结果。
-- 单篇论文卡片：展示结构化摘要与推荐理由。
-- Swagger `/api/papers/recommend` 页面：展示 API 化能力。
-- `docs/system_pipeline.md` 流程图：展示技术路线。
+- Homepage title + search area
+- Parameter panel
+- Recommendation result table
+- Structured paper card section
+- Swagger page for `/api/papers/recommend`
+- Mermaid pipeline diagram in `docs/system_pipeline.md`
 
-## 当前限制
+## Current Limitations
 
-- 当前主打数据源是 arXiv；OpenAlex 和 Semantic Scholar 已预留接口，但实际可用性会受到外部 API 限流和字段完整度影响。
-- 结构化摘要基于摘要句子抽取与规则匹配，不是生成式总结，因此更稳但表达可能偏模板化。
-- 引用数在 arXiv 数据源下通常缺失，因此 `sort_by=citation` 对 arXiv 结果影响有限。
-- Sentence-Transformers 第一次加载模型会比较慢，首次推荐请求会有冷启动时间。
+- arXiv may occasionally rate-limit or timeout on repeated requests; the backend now retries and returns clearer timeout messages
+- OpenAlex and Semantic Scholar are supported, but their field completeness depends on upstream APIs
+- Structured summaries are extractive and rule-based, so they are more stable than generated summaries but less expressive
+- Citation-based sorting is limited for arXiv because citation counts are often unavailable
+- The first dense retrieval request may be slower because the embedding model needs to be loaded
+
+## Repository Notes
+
+- No OpenAI API
+- No LangChain
+- No LlamaIndex
+- No heavy database
+- No user login system
+
+这个仓库适合继续扩展为课程报告中的“方案设计”和“技术路线”部分。
